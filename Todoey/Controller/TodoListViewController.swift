@@ -11,20 +11,24 @@ import UIKit
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    //  create Items.plist
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+     
         
         let newItem = Item()
         newItem.title = "Find Mike"
         itemArray.append(newItem)
         
         //저장된 아이템들을 꺼내서 다시 불러오는 것.
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
-        }
+//        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
+//            itemArray = items
+//        }
+        loadItems();
         
     }
     
@@ -63,10 +67,12 @@ class TodoListViewController: UITableViewController {
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         //when selectedItem is done? change to not done
         //Or selectedItem is not done? change to done
+
+        saveItems()
+        //save check
         
-    
-        tableView.reloadData();
         tableView.deselectRow(at: indexPath, animated: true);
+        tableView.reloadData() //reload table view
     }
     
     //MARK - Add New Items
@@ -84,8 +90,8 @@ class TodoListViewController: UITableViewController {
             newItem.title = textField.text!
             self.itemArray.append(newItem)
             
-            //Save updated Item to UserDefaults
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+           
+            self.saveItems();
             
             self.tableView.reloadData() //reload table view
             
@@ -97,6 +103,32 @@ class TodoListViewController: UITableViewController {
         alert.addAction(action)
         present(alert, animated: true, completion: nil) //show alert
         
+    }
+    
+    //MARK - Model Manupulation Methods
+    
+    func saveItems() {
+        //Save updated Item to UserDefaults
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray) //encode itemArray
+            try data.write(to: dataFilePath!) //Writing ecnoded itemArray into dataFilePath which include Items.plist
+        } catch {
+            print("Error")
+        }
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                    itemArray = try decoder.decode([Item].self, from: data);
+            } catch {
+                print("error!")
+            }
+            
+        }
     }
     
 
