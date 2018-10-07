@@ -12,9 +12,9 @@ import CoreData
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     //  create Items.plist
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext //Singleton instance
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext //Singleton instance. Connecting Database
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,15 +22,15 @@ class TodoListViewController: UITableViewController {
         
      
         
-        let newItem = Item()
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
+//        let newItem = Item()
+//        newItem.title = "Find Mike"
+//        itemArray.append(newItem)
         
         //저장된 아이템들을 꺼내서 다시 불러오는 것.
 //        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
 //            itemArray = items
 //        }
-//        loadItems();
+        loadItems();
         
     }
     
@@ -65,8 +65,15 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //어떠한 셀이 선택되었을때 그 셀이 무엇인지 알려주는 메소드.
 
+        //Delete
+        context.delete(itemArray[indexPath.row])
+        itemArray.remove(at: indexPath.row)
         
-        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        //Update
+//        itemArray[indexPath.row].setValue("Completed", forKey: "title")
+        //Checking toggle
+//        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+
         //when selectedItem is done? change to not done
         //Or selectedItem is not done? change to done
 
@@ -94,7 +101,7 @@ class TodoListViewController: UITableViewController {
             newItem.title = textField.text!
             newItem.done = false; //Required Attribute.
             self.itemArray.append(newItem)
-            self.saveItems();
+            self.saveItems(); //Create in CRUD
             self.tableView.reloadData() //reload table view
             
         }
@@ -113,13 +120,22 @@ class TodoListViewController: UITableViewController {
         //Save updated Item to UserDefaults
         do {
 
-           try context.save()
+           try context.save() //Commit newItem which is Coredata
         } catch {
             print("Error")
         }
     }
     
-//    func loadItems() {
+    func loadItems() {
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error fetching data from context \(error)")
+        }
+        
+        
 //        if let data = try? Data(contentsOf: dataFilePath!) {
 //            let decoder = PropertyListDecoder()
 //            do {
@@ -129,7 +145,7 @@ class TodoListViewController: UITableViewController {
 //            }
 //
 //        }
-//    }
+    }
     
 
 
