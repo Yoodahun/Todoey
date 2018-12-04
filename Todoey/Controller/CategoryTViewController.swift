@@ -8,15 +8,17 @@
 
 import UIKit
 import CoreData
+import RealmSwift
 
 class CategoryTViewController: UITableViewController {
-
-    //We created Datamodel emptyArray
-    var categoryArray = [Category]()
     
-    //Singleton instance. communicate persistent container
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    //Init realm instance
+    let realm = try! Realm();
     
+    //We init Datamodel emptyArray
+    var categoryArray: Results<Category>?
+    
+   
     
     
     override func viewDidLoad() {
@@ -36,14 +38,14 @@ class CategoryTViewController: UITableViewController {
         
         //alert add button
         let action = UIAlertAction(title: "Add Category", style: .default) { (action) in
-            let newCategory = Category(context: self.context)
+            let newCategory = Category()
             newCategory.name = textField.text!
             
             //add category
-            self.categoryArray.append(newCategory)
+//            self.categoryArray.append(newCategory)
             
             //save category in Core Data
-            self.saveCategories();
+            self.saveCategories(newCategory);
             
             //reload
             self.tableView.reloadData();
@@ -62,7 +64,9 @@ class CategoryTViewController: UITableViewController {
     //how many rows in table view
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        return categoryArray.count
+        //defalut value
+        //if categoryArray is null ? return 1
+        return categoryArray?.count ?? 1
     }
     
     //reuse cell
@@ -71,8 +75,8 @@ class CategoryTViewController: UITableViewController {
         //Area categoryCell in CategoryTableViewController
         let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath)
         
-        let category = categoryArray[indexPath.row]
-        cell.textLabel?.text = category.name
+       
+        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "No Categories added yet"
         
         return cell
     }
@@ -96,7 +100,7 @@ class CategoryTViewController: UITableViewController {
         //selected table row in tableView is not nil
         if let indexPath = tableView.indexPathForSelectedRow {
             //Setting the category that selected row number
-            destinationViewController.selectedCategory = self.categoryArray[indexPath.row]
+            destinationViewController.selectedCategory = self.categoryArray?[indexPath.row]
         
         }
         
@@ -105,9 +109,11 @@ class CategoryTViewController: UITableViewController {
     //MARK: - Data Manipulation Methods
     
     //Save item CoreData
-    func saveCategories() {
+    func saveCategories(_ category : Category) {
         do {
-            try context.save()
+            try realm.write {
+                realm.add(category)
+            }
         } catch  {
             print("Error")
         }
@@ -115,14 +121,10 @@ class CategoryTViewController: UITableViewController {
         tableView.reloadData()
     }
     
-    func loadCategories(with request : NSFetchRequest<Category> = Category.fetchRequest()) {
-        do {
-            categoryArray =  try context.fetch(request)
-        } catch  {
-            print("Error fetching data from context \(error)")
-        }
-        
-        //Reload data
+    func loadCategories() {
+        categoryArray = realm.objects(Category.self)
+
+//        //Reload data
         tableView.reloadData();
     }
     
